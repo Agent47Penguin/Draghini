@@ -67,15 +67,20 @@ class WindowManager {
     public:
         WindowManager();
         ~WindowManager();
-        int InitSDL();
+        int InitSDL(const char* title, int screenWidth, int screenHeight);
         void ClearBackground(Color color);
         void Present();
         void DrawTexture(SDL_Texture* texture);
         void DrawTexture2D(Texture2D* texture2D);
-        void Update();
-        bool ShouldClose();
+        void SetTargetFPS(int fps);
+        void UpdateWindow();
+        bool ShouldWindowClose();
         // --------------------------------------------------------------
     private:
+        int windowWidth;
+        int windowHeight;
+        const char* windowTitle;
+        int targetFPS;
         void LoadTexture2D(Texture2D* texture2D);
         SDL_Window* window;
         SDL_Renderer* renderer;
@@ -135,6 +140,7 @@ WindowManager::WindowManager() {
     window = NULL;
     renderer = NULL;
     initializedSDL = false;
+    targetFPS = 60;
 }
 
 WindowManager::~WindowManager() {
@@ -151,8 +157,21 @@ WindowManager::~WindowManager() {
     }
 }
 
-// Initializes SDL
-int WindowManager::InitSDL() {
+/* 
+    Creates an SDL window with the desired parameters.
+    If passed values are NULL and 0, then the a default window is created.
+*/
+int WindowManager::InitSDL(const char* title, int screenWidth, int screenHeight) {
+    // Init Inputs
+    if (title == NULL) windowTitle = "Draghini";
+    else windowTitle = title;
+
+    if (screenWidth == 0) windowWidth = 512;
+    else windowWidth = screenWidth;
+
+    if (screenHeight == 0) windowHeight = 512;
+    else windowHeight = screenHeight;  
+
     // Initialize SDL Video Subsystem
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cout << "Failed to initialize SDL Video Subsystem. SDL Error: " << SDL_GetError() << std::endl;
@@ -163,7 +182,7 @@ int WindowManager::InitSDL() {
     }
 
     // Create SDL Window
-    window = SDL_CreateWindow("Draghini", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 720, 480, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow(windowTitle, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_SHOWN);
     if (window == NULL) {
         std::cout << "Failed to create SDL Window. SDL Error: " << SDL_GetError() << std::endl;
         return -1;
@@ -213,7 +232,11 @@ void WindowManager::Present() {
     SDL_RenderPresent(renderer);
 }
 
-void WindowManager::Update() {
+void WindowManager::SetTargetFPS(int fps) {
+    
+}
+
+void WindowManager::UpdateWindow() {
     // Check for SDL Events
     inputManager.UpdateKeyboardState();
 
@@ -221,7 +244,7 @@ void WindowManager::Update() {
 }
 
 // Checks If Window Should Be Closed
-bool WindowManager::ShouldClose() {
+bool WindowManager::ShouldWindowClose() {
     return inputManager.ShouldClose();
 }
 
