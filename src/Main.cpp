@@ -1,6 +1,9 @@
 #include <iostream>
 #include "Draghini.h"
 
+// TODO:
+// MAKE FPS CAP
+
 int main(int argc, char* argv[]) {
     WindowManager windowManager = WindowManager();
 
