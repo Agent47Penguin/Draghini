@@ -1,9 +1,6 @@
 #include <iostream>
 #include "Draghini.h"
 
-// TODO:
-// MAKE FPS CAP
-
 int main(int argc, char* argv[]) {
     WindowManager windowManager = WindowManager();
 
@@ -19,9 +16,6 @@ int main(int argc, char* argv[]) {
         windowManager.ClearBackground(RED);
         windowManager.DrawTexture2D(&monke);
         windowManager.Present();
-
-        // Update
-        windowManager.UpdateWindow();
     }
 
     return 0;

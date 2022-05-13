@@ -73,14 +73,27 @@ class WindowManager {
         void DrawTexture(SDL_Texture* texture);
         void DrawTexture2D(Texture2D* texture2D);
         void SetTargetFPS(int fps);
-        void UpdateWindow();
+        double GetDeltaTime();
+        int GetFPS();
         bool ShouldWindowClose();
         // --------------------------------------------------------------
     private:
+        // win vars
         int windowWidth;
         int windowHeight;
         const char* windowTitle;
-        int targetFPS;
+        void UpdateWindow();
+        
+        // fps info
+        Uint64 startFrame;
+        Uint64 endFrame;
+        int targetFPS = 60;
+        int currentFPS = 0;
+        double deltaTime = 0;
+        double msPreviousFrame = 0;
+        void CapFPS();
+
+        //
         void LoadTexture2D(Texture2D* texture2D);
         SDL_Window* window;
         SDL_Renderer* renderer;
@@ -93,15 +106,21 @@ class WindowManager {
 // ------------------------------ //
 /*   Texture2D Implementation     */
 // ------------------------------ //
+
+// Creates A Texture2D
 Texture2D::Texture2D(const char* filePath) {
     fileLoc = filePath;
     image = NULL;
 }
+
+// Destroys Texture
 Texture2D::~Texture2D() {
     if(image != NULL) {
         SDL_DestroyTexture(image);
     }
 }
+
+// Takes an SDL_Texture* to Populate Texture2D Class
 void Texture2D::LoadTexture(SDL_Texture* texture) {
     // Get Width and Height
     SDL_QueryTexture(texture, NULL, NULL, &width, &height);
@@ -112,6 +131,8 @@ void Texture2D::LoadTexture(SDL_Texture* texture) {
     // Set Image
     image = texture;
 }
+
+// Returns Texture Filepath
 const char* Texture2D::GetFilePath() {
     return fileLoc;
 }
@@ -119,16 +140,20 @@ const char* Texture2D::GetFilePath() {
 // ------------------------------ //
 /*         Input Manager          */
 // ------------------------------ //
+
+// Handles SDL Events
 void InputManager::UpdateKeyboardState() {
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) shouldQuit = true;
     }
 }
 
+// Returns Exit Status
 bool InputManager::ShouldClose() {
     return shouldQuit;
 }
 
+// Checks If Key Is Down
 bool InputManager::IsKeyDown(SDL_Scancode scanCode) {
     return keyboardState[scanCode];
 }
@@ -136,6 +161,8 @@ bool InputManager::IsKeyDown(SDL_Scancode scanCode) {
 // ------------------------------ //
 /*  WindowManager Implementation  */
 // ------------------------------ //
+
+// Creates A Window Manager
 WindowManager::WindowManager() {
     window = NULL;
     renderer = NULL;
@@ -143,6 +170,7 @@ WindowManager::WindowManager() {
     targetFPS = 60;
 }
 
+// Deletes The Window and Renderer, and Shuts Down SDL
 WindowManager::~WindowManager() {
     if (window != NULL) {
         SDL_DestroyWindow(window);
@@ -159,7 +187,8 @@ WindowManager::~WindowManager() {
 
 /* 
     Creates an SDL window with the desired parameters.
-    If passed values are NULL and 0, then the a default window is created.
+    If passed values are NULL and 0, then a window is 
+    created with the default preset.
 */
 int WindowManager::InitSDL(const char* title, int screenWidth, int screenHeight) {
     // Init Inputs
@@ -227,20 +256,53 @@ void WindowManager::DrawTexture2D(Texture2D* texture2D) {
     SDL_RenderCopy(renderer, texture2D->image, NULL, NULL);
 }
 
-// Swaps Buffers and Presents Drawings
+// Presents Drawings and Updates Window
 void WindowManager::Present() {
     SDL_RenderPresent(renderer);
+    UpdateWindow();
 }
 
+// Sets Framerate That Window Will Target
 void WindowManager::SetTargetFPS(int fps) {
-    
+    targetFPS = fps;
 }
 
+// Fetches IO Events and Caps FPS
 void WindowManager::UpdateWindow() {
     // Check for SDL Events
     inputManager.UpdateKeyboardState();
 
     // Then Cap FPS
+    CapFPS();
+}
+
+// Caps FPS and Updates FPS Info
+void WindowManager::CapFPS() {
+    int delayTime = (1000 / targetFPS) - (SDL_GetTicks() - msPreviousFrame);
+
+    if (delayTime > 0 && delayTime <= (1000 / targetFPS)) {
+        SDL_Delay(delayTime);
+    }
+
+    // Gets Current FPS
+    endFrame = SDL_GetPerformanceCounter();
+    currentFPS = 1.0f / ((endFrame - startFrame) / (float)SDL_GetPerformanceFrequency());
+    startFrame = SDL_GetPerformanceCounter();
+
+    // Gets Delta Time
+    deltaTime = (SDL_GetTicks() - msPreviousFrame) / 1000.0;
+
+    msPreviousFrame = SDL_GetTicks();
+}
+
+// Returns Window's Delta Time
+double WindowManager::GetDeltaTime() {
+    return deltaTime;
+}
+
+// Returns Window's FPS
+int WindowManager::GetFPS() {
+    return currentFPS;
 }
 
 // Checks If Window Should Be Closed
